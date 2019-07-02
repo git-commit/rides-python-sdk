@@ -58,6 +58,8 @@ from uber_rides.errors import ClientError
 from uber_rides.errors import ServerError
 
 import pprint
+import RPi.GPIO as GPIO # Import Raspberry Pi GPIO library
+
 
 # Garching
 START_LAT = 48.24896 
@@ -235,7 +237,7 @@ def get_ride_details(api_client, ride_id):
         success_print(ride_details.json)
 
 
-if __name__ == '__main__':
+def on_button():
     """Run the example.
 
     Create an UberRidesClient from OAuth 2.0 Credentials, update a sandbox
@@ -264,3 +266,13 @@ if __name__ == '__main__':
 
     paragraph_print("Updated ride details.")
     get_ride_details(api_client, ride_id)
+
+def init_gpio():
+    GPIO.setwarnings(False) # Ignore warning for now
+    GPIO.setmode(GPIO.BOARD) # Use physical pin numbering
+    GPIO.setup(10, GPIO.IN, pull_up_down=GPIO.PUD_DOWN) # Set pin 10 to be an input pin and set initial value to be pulled low (off)
+
+if __name__ == '__main__':
+    GPIO.add_event_detect(10,GPIO.RISING,callback=on_button) # Setup event on pin 10 rising edge
+    message = input("Press enter to quit\n\n") # Run until someone presses enter
+    GPIO.cleanup() # Clean up
