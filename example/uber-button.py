@@ -273,6 +273,7 @@ def init_gpio():
     GPIO.setup(10, GPIO.IN, pull_up_down=GPIO.PUD_DOWN) # Set pin 10 to be an input pin and set initial value to be pulled low (off)
 
 if __name__ == '__main__':
+    init_gpio()
     GPIO.add_event_detect(10,GPIO.RISING,callback=on_button) # Setup event on pin 10 rising edge
     message = input("Press enter to quit\n\n") # Run until someone presses enter
     GPIO.cleanup() # Clean up
