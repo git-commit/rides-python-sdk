@@ -31,6 +31,7 @@ from yaml import safe_load
 from uber_rides.client import UberRidesClient
 from uber_rides.session import OAuth2Credential
 from uber_rides.session import Session
+import pprint
 
 
 # set your app credentials here
@@ -61,7 +62,8 @@ def success_print(message):
         message (str)
             Message to print.
     """
-    print(COLORS.success, message, COLORS.end)
+    #print(COLORS.success, message, COLORS.end)
+    pprint.pprint(message)
 
 
 def response_print(message):
@@ -71,7 +73,8 @@ def response_print(message):
         message (str)
             Message to print.
     """
-    print(COLORS.response, message, COLORS.end)
+    #print(COLORS.response, message, COLORS.end)
+    pprint.pprint(message)
 
 
 def fail_print(error):
@@ -93,6 +96,7 @@ def paragraph_print(message):
     """
     paragraph = '\n{}\n'
     print(paragraph.format(message))
+    
 
 
 def import_app_credentials(filename=CREDENTIALS_FILENAME):

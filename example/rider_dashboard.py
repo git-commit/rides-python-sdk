@@ -9,6 +9,9 @@ from uber_rides.client import UberRidesClient
 
 from collections import OrderedDict, Counter
 
+from yaml import safe_dump
+
+
 app = Flask(__name__, template_folder="./")
 
 credentials = import_app_credentials('config.rider.yaml')
@@ -34,6 +37,22 @@ def connect():
     # Exchange authorization code for acceess token and create session
     session = auth_flow.get_session(request.url)
     client = UberRidesClient(session)
+
+    credential = session.oauth2credential
+
+    credential_data = {
+        'client_id': credential.client_id,
+        'redirect_url': credential.redirect_url,
+        'access_token': credential.access_token,
+        'expires_in_seconds': credential.expires_in_seconds,
+        'scopes': list(credential.scopes),
+        'grant_type': credential.grant_type,
+        'client_secret': credential.client_secret,
+        'refresh_token': credential.refresh_token,
+    }
+
+    with open('oauth_rider_session_store.yaml', 'w') as yaml_file:
+        yaml_file.write(safe_dump(credential_data, default_flow_style=False))
 
     # Fetch profile for rider
     profile = client.get_rider_profile().json
