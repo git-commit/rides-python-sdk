@@ -163,59 +163,13 @@ def request_ufp_ride(api_client):
     else:
         success_print(estimate.json)
         success_print(request.json)
+        time = estimate.json.get("pickup_estimate")
+        duration = estimate.json.get("trip")["duration_estimate"] / 60
+
+        print("Arrival in %d minutes" % time)
+        print("Trip will take %d minutes" % duration)
+
         return request.json.get('request_id')
-
-
-def request_surge_ride(api_client, surge_confirmation_id=None):
-    """Use an UberRidesClient to request a ride and print the results.
-
-    If the product has a surge_multiple greater than or equal to 2.0,
-    a SurgeError is raised. Confirm surge by visiting the
-    surge_confirmation_url and automatically try the request again.
-
-    Parameters
-        api_client (UberRidesClient)
-            An authorized UberRidesClient with 'request' scope.
-        surge_confirmation_id (string)
-            Unique identifer received after confirming surge.
-
-    Returns
-        The unique ID of the requested ride.
-    """
-    try:
-        request = api_client.request_ride(
-            product_id=SURGE_PRODUCT_ID,
-            start_latitude=START_LAT,
-            start_longitude=START_LNG,
-            end_latitude=END_LAT,
-            end_longitude=END_LNG,
-            surge_confirmation_id=surge_confirmation_id,
-            seat_count=2
-        )
-
-    except SurgeError as e:
-        surge_message = 'Confirm surge by visiting: \n{}\n'
-        surge_message = surge_message.format(e.surge_confirmation_href)
-        response_print(surge_message)
-
-        confirm_url = 'Copy the URL you are redirected to and paste here: \n'
-        result = input(confirm_url).strip()
-
-        querystring = urlparse(result).query
-        query_params = parse_qs(querystring)
-        surge_id = query_params.get('surge_confirmation_id')[0]
-
-        # automatically try request again
-        return request_surge_ride(api_client, surge_id)
-
-    except (ClientError, ServerError) as error:
-        fail_print(error)
-        return
-
-    else:
-        success_print(request.json)
-        return request.json.get('request_id')
-
 
 def get_ride_details(api_client, ride_id):
     """Use an UberRidesClient to get ride details and print the results.
