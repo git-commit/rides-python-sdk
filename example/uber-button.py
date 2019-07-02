@@ -237,7 +237,7 @@ def get_ride_details(api_client, ride_id):
         success_print(ride_details.json)
 
 
-def on_button():
+def on_button(channel):
     """Run the example.
 
     Create an UberRidesClient from OAuth 2.0 Credentials, update a sandbox
