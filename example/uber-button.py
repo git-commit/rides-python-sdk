@@ -263,6 +263,8 @@ def init_gpio():
     GPIO.setwarnings(False) # Ignore warning for now
     GPIO.setmode(GPIO.BOARD) # Use physical pin numbering
     GPIO.setup(10, GPIO.IN, pull_up_down=GPIO.PUD_DOWN) # Set pin 10 to be an input pin and set initial value to be pulled low (off)
+    GPIO.add_event_detect(10, GPIO.RISING)  # add rising edge detection on a channel
+
 
 
 def show_ui(eta, price):
@@ -280,19 +282,26 @@ def show_ui(eta, price):
         print(event, values)
         if event in (None, 'OK'):
             break
+        if rpi and GPIO.event_detected(10):
+            break
+
 
     window.Close()
 
 
 if __name__ == '__main__':
+    rpi = False
     try:
         import RPi.GPIO as GPIO
     except ImportError as e:
         print("Starte im Nicht-Raspberry-Pi Modus")
         on_button("")
     else:
+        rpi = True
         print("Starte im Raspberry-Pi Modus")
         init_gpio()
-        GPIO.add_event_detect(10,GPIO.RISING, callback=on_button, bouncetime=2000) # Setup event on pin 10 rising edge
-        message = input("Press enter to quit\n\n") # Run until someone presses enter
+        while True:
+            GPIO.wait_for_edge(10, GPIO.RISING)
+            on_button(10)
+
         GPIO.cleanup() # Clean up
