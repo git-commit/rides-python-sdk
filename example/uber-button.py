@@ -108,7 +108,7 @@ def estimate_ride(api_client, start_lat, start_lng, end_lat, end_lng):
         success_print(estimate.json)
 
 
-def update_ride(api_client, ride_status, ride_id):
+def update_ride(api_client, ride_status, ride_id, verbose=True):
     """Use an UberRidesClient to update ride status and print the results.
 
     Parameters
@@ -126,9 +126,10 @@ def update_ride(api_client, ride_status, ride_id):
         fail_print(error)
 
     else:
-        message = '{} New status: {}'
-        message = message.format(update_product.status_code, ride_status)
-        success_print(message)
+        if verbose:
+            message = '{} New status: {}'
+            message = message.format(update_product.status_code, ride_status)
+            success_print(message)
 
 
 def request_ufp_ride(api_client, start_lat, start_lng, end_lat, end_lng):
@@ -169,17 +170,15 @@ def request_ufp_ride(api_client, start_lat, start_lng, end_lat, end_lng):
         return
 
     else:
-        success_print(estimate.json)
-        success_print(request.json)
-        time = estimate.json.get("pickup_estimate")
-        duration = estimate.json.get("trip")["duration_estimate"] / 60
+        #success_print(estimate.json)
+        #success_print(request.json)
 
-        print("Arrival in %d minutes" % time)
-        print("Trip will take %d minutes" % duration)
+        paragraph_print("Die Fahrt wird vorraussichtlich %s kosten.\nDer Fahrer kann in %s Minuten da sein.\nDie Fahrdauer bis zum Ziel beträgt %s Minuten"
+                        % (estimate.json["fare"]["display"], estimate.json["pickup_estimate"], estimate.json["trip"]["duration_estimate"] / 60))
 
         return request.json.get('request_id')
 
-def get_ride_details(api_client, ride_id):
+def get_ride_details(api_client, ride_id, verbose=True):
     """Use an UberRidesClient to get ride details and print the results.
 
     Parameters
@@ -187,6 +186,8 @@ def get_ride_details(api_client, ride_id):
             An authorized UberRidesClient with 'request' scope.
         ride_id (str)
             Unique ride identifier.
+            :param verbose:
+            :param verbose:
     """
     try:
         ride_details = api_client.get_ride_details(ride_id)
@@ -195,7 +196,9 @@ def get_ride_details(api_client, ride_id):
         fail_print(error)
 
     else:
-        success_print(ride_details.json)
+        if verbose:
+            success_print(ride_details.json)
+        return ride_details.json
 
 def get_latlng(location):
     cache = FileCache('uber-button-cache')
@@ -222,6 +225,8 @@ def on_button(channel):
     # ride request with upfront pricing flow
     api_client.cancel_current_ride()
 
+    verbose = True
+
     print("Frage Koordinaten ab...")
 
     start = get_latlng(START_NAME)
@@ -234,24 +239,21 @@ def on_button(channel):
         print("Bitte gültige Endadresse eingeben")
 
     #Request a ride with upfront pricing product
-    print("Anfrage einer Fahrt...\nVon: %s\nNach: %s" % (start, end))
+    paragraph_print("Anfrage einer Fahrt...\nVon: %s\nNach: %s" % (start, end))
     ride_id = request_ufp_ride(api_client, start.latitude, start.longitude, end.latitude, end.longitude)
 
-    # Update ride status to accepted
-    update_ride(api_client, 'accepted', ride_id)
+    paragraph_print("Akzeptiere Fahrt...")
+    update_ride(api_client, 'accepted', ride_id, verbose=verbose)
 
-    paragraph_print("Updated ride details.")
-    get_ride_details(api_client, ride_id)
-    update_ride(api_client, 'in_progress', ride_id)
+    paragraph_print("Warten bis Fahrer da ist...")
+    time.sleep(5)
 
-    paragraph_print("Updated ride details.")
-    get_ride_details(api_client, ride_id)
+    paragraph_print("Einsteigen und losfahren...")
+    update_ride(api_client, 'in_progress', ride_id, verbose=verbose)
+    time.sleep(5)
 
-    paragraph_print("Update ride status to completed.")
-    update_ride(api_client, 'completed', ride_id)
-
-    paragraph_print("Updated ride details.")
-    get_ride_details(api_client, ride_id)
+    paragraph_print("Am Ziel angekommen...")
+    update_ride(api_client, 'completed', ride_id, verbose=verbose)
 
 def init_gpio():
     import RPi.GPIO as GPIO # Import Raspberry Pi GPIO library
