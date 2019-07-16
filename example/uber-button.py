@@ -38,6 +38,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import time
+from collections import namedtuple
 
 try:
     from urllib.parse import parse_qs
@@ -121,7 +122,6 @@ def update_ride(api_client, ride_status, ride_id, verbose=True):
             message = message.format(update_product.status_code, ride_status)
             success_print(message)
 
-
 def request_ufp_ride(api_client, start_lat, start_lng, end_lat, end_lng):
     """Use an UberRidesClient to request a ride and print the results.
 
@@ -163,8 +163,11 @@ def request_ufp_ride(api_client, start_lat, start_lng, end_lat, end_lng):
         #success_print(estimate.json)
         #success_print(request.json)
 
+        fare = estimate.json["fare"]["display"]
+        pickup_estimate = estimate.json["pickup_estimate"]
+        trip_duration_estimate = estimate.json["trip"]["duration_estimate"] / 60
         paragraph_print("Die Fahrt wird vorraussichtlich %s kosten.\nDer Fahrer kann in %s Minuten da sein.\nDie Fahrdauer bis zum Ziel beträgt %s Minuten"
-                        % (estimate.json["fare"]["display"], estimate.json["pickup_estimate"], estimate.json["trip"]["duration_estimate"] / 60))
+                        % (fare, pickup_estimate, trip_duration_estimate))
 
         return request.json.get('request_id')
 
@@ -224,11 +227,19 @@ def on_button(channel):
     start = get_latlng(START_NAME)
     end = get_latlng(END_NAME)
 
+    # Manually set coordinates
+    #UberLocation = namedtuple('UberLocation', 'latitude longitude')
+    #start = UberLocation(48, 11)
+    #end = UberLocation(48, 10)
+
     if start is None:
         print("Bitte gültige Startadresse eingeben")
         return
     if end is None:
         print("Bitte gültige Endadresse eingeben")
+
+    print("Start (%s, %s)" % (start.latitude, start.longitude))
+    print("Ende (%s, %s)" % (end.latitude, end.longitude))
 
     #Request a ride with upfront pricing product
     paragraph_print("Anfrage einer Fahrt...\nVon: %s\nNach: %s" % (start, end))
