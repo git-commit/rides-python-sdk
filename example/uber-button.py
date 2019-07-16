@@ -295,6 +295,6 @@ if __name__ == '__main__':
     else:
         print("Starte im Raspberry-Pi Modus")
         init_gpio()
-        GPIO.add_event_detect(10,GPIO.RISING,callback=on_button) # Setup event on pin 10 rising edge
+        GPIO.add_event_detect(10,GPIO.RISING, callback=on_button, bouncetime=200) # Setup event on pin 10 rising edge
         message = input("Press enter to quit\n\n") # Run until someone presses enter
         GPIO.cleanup() # Clean up
