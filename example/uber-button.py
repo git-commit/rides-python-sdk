@@ -200,6 +200,7 @@ def on_button(channel):
     api_client = create_uber_client(credentials)
 
     # ride request with upfront pricing flow
+    api_client.cancel_current_ride()
 
     paragraph_print("Request a ride with upfront pricing product.")
     ride_id = request_ufp_ride(api_client)
