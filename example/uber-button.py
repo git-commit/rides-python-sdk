@@ -208,7 +208,7 @@ def get_latlng(location):
     return cache[location]
 
 
-def on_button(channel):
+def on_button():
     """Run the example.
 
     Create an UberRidesClient from OAuth 2.0 Credentials, update a sandbox
@@ -263,8 +263,7 @@ def init_gpio():
     GPIO.setwarnings(False) # Ignore warning for now
     GPIO.setmode(GPIO.BOARD) # Use physical pin numbering
     GPIO.setup(10, GPIO.IN, pull_up_down=GPIO.PUD_DOWN) # Set pin 10 to be an input pin and set initial value to be pulled low (off)
-    GPIO.add_event_detect(10, GPIO.RISING)  # add rising edge detection on a channel
-
+    GPIO.add_event_detect(10, GPIO.RISING, bouncetime=1000)  # add rising edge detection on a channel
 
 
 def show_ui(eta, price):
@@ -278,13 +277,12 @@ def show_ui(eta, price):
     window = sg.Window('UberButton', layout)
     # Event Loop to process "events"
     while True:
-        event, values = window.Read()
-        print(event, values)
+        event, values = window.Read(timeout=1000)
+        #print(event, values)
         if event in (None, 'OK'):
             break
-        if rpi and GPIO.event_detected(10):
+        elif rpi and GPIO.event_detected(10):
             break
-
 
     window.Close()
 
@@ -301,7 +299,8 @@ if __name__ == '__main__':
         print("Starte im Raspberry-Pi Modus")
         init_gpio()
         while True:
-            GPIO.wait_for_edge(10, GPIO.RISING)
-            on_button(10)
+            if GPIO.event_detected(10):
+                on_button()
+            time.sleep(1)
 
         GPIO.cleanup() # Clean up
