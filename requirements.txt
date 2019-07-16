@@ -20,3 +20,4 @@ vcrpy==1.11.1
 wrapt==1.10.11
 geopy
 fcache
+PySimpleGUI

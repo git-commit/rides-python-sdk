@@ -169,6 +169,8 @@ def request_ufp_ride(api_client, start_lat, start_lng, end_lat, end_lng):
         paragraph_print("Die Fahrt wird vorraussichtlich %s kosten.\nDer Fahrer kann in %s Minuten da sein.\nDie Fahrdauer bis zum Ziel beträgt %s Minuten"
                         % (fare, pickup_estimate, trip_duration_estimate))
 
+        show_ui(pickup_estimate, fare)
+
         return request.json.get('request_id')
 
 
@@ -263,6 +265,25 @@ def init_gpio():
     GPIO.setwarnings(False) # Ignore warning for now
     GPIO.setmode(GPIO.BOARD) # Use physical pin numbering
     GPIO.setup(10, GPIO.IN, pull_up_down=GPIO.PUD_DOWN) # Set pin 10 to be an input pin and set initial value to be pulled low (off)
+
+
+def show_ui(eta, price):
+    import PySimpleGUI as sg
+    font = ("Helvetica", 50)
+    layout = [[sg.Text('Ankunft in: %s Minuten' % eta, font=font)],
+              [sg.Text('Preis: %s' % price, font=font)],
+              [sg.OK(font=font)]]
+
+    # Create the Window
+    window = sg.Window('UberButton', layout)
+    # Event Loop to process "events"
+    while True:
+        event, values = window.Read()
+        print(event, values)
+        if event in (None, 'OK'):
+            break
+
+    window.Close()
 
 
 if __name__ == '__main__':
