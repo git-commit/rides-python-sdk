@@ -169,9 +169,7 @@ def request_ufp_ride(api_client, start_lat, start_lng, end_lat, end_lng):
         paragraph_print("Die Fahrt wird vorraussichtlich %s kosten.\nDer Fahrer kann in %s Minuten da sein.\nDie Fahrdauer bis zum Ziel beträgt %s Minuten"
                         % (fare, pickup_estimate, trip_duration_estimate))
 
-        show_ui(pickup_estimate, fare)
-
-        return request.json.get('request_id')
+        return (request.json.get('request_id'), pickup_estimate, fare)
 
 
 def get_ride_details(api_client, ride_id, verbose=True):
@@ -245,13 +243,13 @@ def on_button(channel):
 
     #Request a ride with upfront pricing product
     paragraph_print("Anfrage einer Fahrt...\nVon: %s\nNach: %s" % (start, end))
-    ride_id = request_ufp_ride(api_client, start.latitude, start.longitude, end.latitude, end.longitude)
+    ride_id, pickup_estimate, fare = request_ufp_ride(api_client, start.latitude, start.longitude, end.latitude, end.longitude)
 
     paragraph_print("Akzeptiere Fahrt...")
     update_ride(api_client, 'accepted', ride_id, verbose=verbose)
 
     paragraph_print("Warten bis Fahrer da ist...")
-    time.sleep(5)
+    show_ui(pickup_estimate, fare)
 
     paragraph_print("Einsteigen und losfahren...")
     update_ride(api_client, 'in_progress', ride_id, verbose=verbose)
