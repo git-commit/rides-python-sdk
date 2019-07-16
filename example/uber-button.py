@@ -52,29 +52,19 @@ from example.utils import create_uber_client
 from example.utils import fail_print
 from example.utils import import_oauth2_credentials
 from example.utils import paragraph_print
-from example.utils import response_print
 from example.utils import success_print
 
-from uber_rides.client import SurgeError
 from uber_rides.errors import ClientError
 from uber_rides.errors import ServerError
-from geopy.geocoders import Nominatim, GeoNames
+from geopy.geocoders import Nominatim
 
 from fcache.cache import FileCache
 
-import pprint
-
-
 # Starting location
 START_NAME = "Lichtenbergstraße 6, Garching bei München"
-#START_LAT = 48.24896
-#START_LNG = 11.65101
 
 # End location
 END_NAME = "Moosacher Straße 86, München"
-#END_LAT = 48.137154
-#END_LNG = 11.576124
-
 
 # uber pool
 UFP_PRODUCT_ID = '26546650-e557-4a7b-86e7-6a3942445247'
@@ -178,6 +168,7 @@ def request_ufp_ride(api_client, start_lat, start_lng, end_lat, end_lng):
 
         return request.json.get('request_id')
 
+
 def get_ride_details(api_client, ride_id, verbose=True):
     """Use an UberRidesClient to get ride details and print the results.
 
@@ -199,6 +190,7 @@ def get_ride_details(api_client, ride_id, verbose=True):
         if verbose:
             success_print(ride_details.json)
         return ride_details.json
+
 
 def get_latlng(location):
     cache = FileCache('uber-button-cache')
@@ -255,17 +247,21 @@ def on_button(channel):
     paragraph_print("Am Ziel angekommen...")
     update_ride(api_client, 'completed', ride_id, verbose=verbose)
 
+
 def init_gpio():
-    import RPi.GPIO as GPIO # Import Raspberry Pi GPIO library
     GPIO.setwarnings(False) # Ignore warning for now
     GPIO.setmode(GPIO.BOARD) # Use physical pin numbering
     GPIO.setup(10, GPIO.IN, pull_up_down=GPIO.PUD_DOWN) # Set pin 10 to be an input pin and set initial value to be pulled low (off)
 
+
 if __name__ == '__main__':
-    testing = True
-    if testing:
+    try:
+        import RPi.GPIO as GPIO
+    except ImportError as e:
+        print("Starte im Nicht-Raspberry-Pi Modus")
         on_button("")
     else:
+        print("Starte im Raspberry-Pi Modus")
         init_gpio()
         GPIO.add_event_detect(10,GPIO.RISING,callback=on_button) # Setup event on pin 10 rising edge
         message = input("Press enter to quit\n\n") # Run until someone presses enter
