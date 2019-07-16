@@ -37,6 +37,8 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import time
+
 try:
     from urllib.parse import parse_qs
     from urllib.parse import urlparse
@@ -56,17 +58,22 @@ from example.utils import success_print
 from uber_rides.client import SurgeError
 from uber_rides.errors import ClientError
 from uber_rides.errors import ServerError
+from geopy.geocoders import Nominatim, GeoNames
+
+from fcache.cache import FileCache
 
 import pprint
 
 
-# Garching
-START_LAT = 48.24896 
-START_LNG = 11.65101
+# Starting location
+START_NAME = "Lichtenbergstraße 6, Garching bei München"
+#START_LAT = 48.24896
+#START_LNG = 11.65101
 
-# München
-END_LAT = 48.137154
-END_LNG = 11.576124
+# End location
+END_NAME = "Moosacher Straße 86, München"
+#END_LAT = 48.137154
+#END_LNG = 11.576124
 
 
 # uber pool
@@ -77,7 +84,7 @@ UFP_PRODUCT_ID = 'bcb6224a-f21e-4cde-8e08-53cf9c98164d'
 SURGE_PRODUCT_ID = 'd4abaae7-f4d6-4152-91cc-77523e8165a4'
 
 
-def estimate_ride(api_client):
+def estimate_ride(api_client, start_lat, start_lng, end_lat, end_lng):
     """Use an UberRidesClient to fetch a ride estimate and print the results.
 
     Parameters
@@ -87,10 +94,10 @@ def estimate_ride(api_client):
     try:
         estimate = api_client.estimate_ride(
             product_id=SURGE_PRODUCT_ID,
-            start_latitude=START_LAT,
-            start_longitude=START_LNG,
-            end_latitude=END_LAT,
-            end_longitude=END_LNG,
+            start_latitude=start_lat,
+            start_longitude=start_lng,
+            end_latitude=end_lat,
+            end_longitude=end_lng,
             seat_count=2
         )
 
@@ -124,7 +131,7 @@ def update_ride(api_client, ride_status, ride_id):
         success_print(message)
 
 
-def request_ufp_ride(api_client):
+def request_ufp_ride(api_client, start_lat, start_lng, end_lat, end_lng):
     """Use an UberRidesClient to request a ride and print the results.
 
     Parameters
@@ -138,25 +145,26 @@ def request_ufp_ride(api_client):
 
         estimate = api_client.estimate_ride(
             product_id=UFP_PRODUCT_ID,
-            start_latitude=START_LAT,
-            start_longitude=START_LNG,
-            end_latitude=END_LAT,
-            end_longitude=END_LNG,
+            start_latitude=start_lat,
+            start_longitude=start_lng,
+            end_latitude=end_lat,
+            end_longitude=end_lng,
             seat_count=2
         )
         fare = estimate.json.get('fare')
 
         request = api_client.request_ride(
             product_id=UFP_PRODUCT_ID,
-            start_latitude=START_LAT,
-            start_longitude=START_LNG,
-            end_latitude=END_LAT,
-            end_longitude=END_LNG,
+            start_latitude=start_lat,
+            start_longitude=start_lng,
+            end_latitude=end_lat,
+            end_longitude=end_lng,
             seat_count=2,
             fare_id=fare['fare_id']
         )
 
     except (ClientError, ServerError) as error:
+        print(error)
         fail_print(error)
         return
 
@@ -189,6 +197,18 @@ def get_ride_details(api_client, ride_id):
     else:
         success_print(ride_details.json)
 
+def get_latlng(location):
+    cache = FileCache('uber-button-cache')
+
+    if location not in cache:
+        geolocator = Nominatim(user_agent="Uber-Button")
+        geolocator.timeout = 60
+        time.sleep(1.1)
+        cache[location] = geolocator.geocode(location)
+        cache.sync()
+
+    return cache[location]
+
 
 def on_button(channel):
     """Run the example.
@@ -202,10 +222,22 @@ def on_button(channel):
     # ride request with upfront pricing flow
     api_client.cancel_current_ride()
 
-    paragraph_print("Request a ride with upfront pricing product.")
-    ride_id = request_ufp_ride(api_client)
+    print("Frage Koordinaten ab...")
 
-    paragraph_print("Update ride status to accepted.")
+    start = get_latlng(START_NAME)
+    end = get_latlng(END_NAME)
+
+    if start is None:
+        print("Bitte gültige Startadresse eingeben")
+        return
+    if end is None:
+        print("Bitte gültige Endadresse eingeben")
+
+    #Request a ride with upfront pricing product
+    print("Anfrage einer Fahrt...\nVon: %s\nNach: %s" % (start, end))
+    ride_id = request_ufp_ride(api_client, start.latitude, start.longitude, end.latitude, end.longitude)
+
+    # Update ride status to accepted
     update_ride(api_client, 'accepted', ride_id)
 
     paragraph_print("Updated ride details.")
